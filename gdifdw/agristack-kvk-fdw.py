@@ -55,7 +55,7 @@ class AgriStackKvkFdw(ForeignDataWrapper):
             )
 
         id = 1
-        for i in resp:
+        for i in api_response:
             yield {
                 **i,
                 "geom": json.dumps(
