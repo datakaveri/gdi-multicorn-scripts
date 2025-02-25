@@ -13,4 +13,5 @@ requires-python = "==3.9.2"
 keywords = ["gdi", "multicorn"]
 dependencies = [
     "requests",
+    "requests-cache",
 ]
