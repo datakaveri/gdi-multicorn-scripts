@@ -17,6 +17,7 @@ import json
 REQUESTS_CACHE_FILENAME = "requests-cache"
 API = "https://kvk.icar.gov.in/api/api/KMS/getKVKDetails"
 RESPONSE_SORT_KEY = "kvk_id"
+RESPONSE_CACHE_TIMEOUT_SECONDS = 172800  # 2 days
 TIMEOUT_SEC = 60
 
 
@@ -25,7 +26,10 @@ class AgriStackKvkFdw(ForeignDataWrapper):
     def __init__(self, options, columns):
         super(AgriStackKvkFdw, self).__init__(options, columns)
         self.session = CachedSession(
-            db_path=REQUESTS_CACHE_FILENAME, backend="sqlite", use_temp=True
+            db_path=REQUESTS_CACHE_FILENAME,
+            backend="sqlite",
+            use_temp=True,
+            expire_after=RESPONSE_CACHE_TIMEOUT_SECONDS,
         )
         self.columns = columns
 
