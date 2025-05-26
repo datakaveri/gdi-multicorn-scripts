@@ -15,7 +15,7 @@ from requests import (
 import json
 
 REQUESTS_CACHE_FILENAME = "requests-cache"
-API = "https://kvk.icar.gov.in/api/api/KMS/getKVKDetails"
+API = "https://ufsi.agristack.gov.in/nm/kvkRegistrySearch"
 RESPONSE_SORT_KEY = "kvk_id"
 RESPONSE_CACHE_TIMEOUT_SECONDS = 172800  # 2 days
 TIMEOUT_SEC = 60
@@ -38,9 +38,10 @@ class AgriStackKvkFdw(ForeignDataWrapper):
         try:
             r = self.session.get(API, timeout=TIMEOUT_SEC)
             r.raise_for_status()
+            json_output = r.json()
 
-            # API returns a JSON array of JSON objects
-            api_response = sorted(r.json(), key=lambda d: d["kvk_id"])
+            # API returns a JSON object containing a JSON array called 'data' of JSON objects
+            api_response = sorted(json_output['data'], key=lambda d: d["kvk_id"])
         except (
             RequestException,
             HTTPError,
@@ -65,7 +66,7 @@ class AgriStackKvkFdw(ForeignDataWrapper):
                 "geom": json.dumps(
                     {
                         "type": "Point",
-                        "coordinates": [i["KVK_Latitude"], i["KVK_Longitude"]],
+                        "coordinates": [i["latitude_of_kvk"], i["longitude_of_kvk"]],
                     }
                 ),
                 "id": id,
