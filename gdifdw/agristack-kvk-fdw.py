@@ -66,7 +66,7 @@ class AgriStackKvkFdw(ForeignDataWrapper):
                 "geom": json.dumps(
                     {
                         "type": "Point",
-                        "coordinates": [i["latitude_of_kvk"], i["longitude_of_kvk"]],
+                        "coordinates": [i["longitude_of_kvk"], i["latitude_of_kvk"]],
                     }
                 ),
                 "id": id,
