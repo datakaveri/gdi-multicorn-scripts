@@ -1,7 +1,7 @@
 from multicorn import ForeignDataWrapper
 from requests_cache import CachedSession
 from multicorn.utils import log_to_postgres
-from logging import ERROR, INFO
+from logging import ERROR, INFO, WARNING
 from requests_cache import CachedSession
 import requests
 from requests import (
@@ -43,14 +43,19 @@ class AssamVillageCadastralFdw(ForeignDataWrapper):
                 ERROR,
             )
 
+        self.https_proxy = options.get("https_proxy", None)
+        if self.https_proxy is None:
+            log_to_postgres(
+                "HTTPS proxy is not set. Set the HTTPS proxy using foreign table option 'https_proxy'",
+                WARNING,
+            )
+
         self.columns = columns
 
     def execute(self, quals, columns):
         # check if id='<feature ID>' kind of query is run. This indicates that an `/items/<featureId>` API call is being made.
         feature_id = [
-            qual
-            for qual in quals
-            if qual.field_name == "id" and qual.operator == "="
+            qual for qual in quals if qual.field_name == "id" and qual.operator == "="
         ]
 
         if feature_id:
@@ -69,7 +74,7 @@ class AssamVillageCadastralFdw(ForeignDataWrapper):
 
         if not village_code_lst or not isinstance(village_code_lst[0].value, int):
             log_to_postgres(
-                "Must include `villageLgdCode` query parameter to get data. Visit lgddirectory.com to get village codes for Assam",
+                "Must include `villageLgdCode` query parameter to get data. Visit lgdirectory.gov.in to get village codes for Assam",
                 ERROR,
                 MULTICORN_REQUEST_PG_ERROR_HINT,
             )
@@ -90,6 +95,7 @@ class AssamVillageCadastralFdw(ForeignDataWrapper):
                 timeout=TIMEOUT_SEC,
                 data=body,
                 headers={"Authorization": "Bearer " + encoded_jwt},
+                proxies={"https": self.https_proxy},
             )
             r.raise_for_status()
 
@@ -102,6 +108,13 @@ class AssamVillageCadastralFdw(ForeignDataWrapper):
             if isinstance(json_output, str):
                 log_to_postgres(
                     f"Failed to get data from API. Obtained string error message {json_output}",
+                    ERROR,
+                    MULTICORN_API_PG_ERROR_HINT,
+                )
+
+            if "features" not in json_output:
+                log_to_postgres(
+                    f"Failed to get expected data from API. Response is {json_output}",
                     ERROR,
                     MULTICORN_API_PG_ERROR_HINT,
                 )
